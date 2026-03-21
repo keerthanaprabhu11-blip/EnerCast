@@ -648,45 +648,36 @@ def get_news():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ── CO2 route ─────────────────────────────────────────────────────────────────
+# ── CO2 route (uses local OWID dataset - no API key needed) ──────────────────
 @app.route('/api/co2')
 def get_co2():
-    country_code = request.args.get('code', 'IN')
-    cached       = cache_get(f'co2_{country_code}')
+    country = request.args.get('country', 'India')
+    cached  = cache_get(f'co2_{country}')
     if cached: return jsonify(cached)
     try:
-        url     = f"https://api.co2signal.com/v1/latest?countryCode={country_code}"
-        headers = {'auth-token': CO2SIGNAL_KEY}
-        resp    = req.get(url, headers=headers, timeout=8)
-        data    = resp.json()
-        result  = {
-            'intensity':    data.get('data', {}).get('carbonIntensity', 0),
-            'fossil_pct':   data.get('data', {}).get('fossilFuelPercentage', 0),
-            'unit':         data.get('units', {}).get('carbonIntensity', 'gCO2eq/kWh'),
-            'country_code': country_code,
+        cdf = df[df['country'] == country].sort_values('year')
+        fossil = cdf['fossil_share_energy'].dropna()
+        renew  = cdf['renewables_share_energy'].dropna()
+        co2    = cdf['co2'].dropna()
+        energy = cdf['primary_energy_consumption'].dropna()
+        fossil_pct = round(float(fossil.iloc[-1]), 1) if len(fossil) > 0 else 60.0
+        renew_pct  = round(float(renew.iloc[-1]),  1) if len(renew)  > 0 else 20.0
+        co2_mt     = round(float(co2.iloc[-1]),    1) if len(co2)    > 0 else 0
+        energy_twh = float(energy.iloc[-1])              if len(energy) > 0 else 1000
+        intensity  = round((co2_mt * 1e6) / (energy_twh * 277.8), 1) if energy_twh > 0 else 400
+        result = {
+            'intensity':  min(intensity, 950),
+            'fossil_pct': fossil_pct,
+            'renew_pct':  renew_pct,
+            'co2_mt':     co2_mt,
+            'unit':       'gCO2eq/kWh',
+            'country':    country,
+            'source':     'OWID Dataset',
         }
-        cache_set(f'co2_{country_code}', result)
+        cache_set(f'co2_{country}', result)
         return jsonify(result)
-    except Exception:
-        # Fallback estimates when API is unavailable
-        fallback = {
-            'IN': {'intensity': 713, 'fossil_pct': 74.2},
-            'US': {'intensity': 386, 'fossil_pct': 61.0},
-            'GB': {'intensity': 186, 'fossil_pct': 41.5},
-            'DE': {'intensity': 350, 'fossil_pct': 55.0},
-            'CN': {'intensity': 555, 'fossil_pct': 68.0},
-            'FR': {'intensity': 85,  'fossil_pct': 15.0},
-            'BR': {'intensity': 160, 'fossil_pct': 22.0},
-            'AU': {'intensity': 480, 'fossil_pct': 69.0},
-        }
-        fb = fallback.get(country_code, {'intensity': 400, 'fossil_pct': 55.0})
-        return jsonify({
-            'intensity':    fb['intensity'],
-            'fossil_pct':   fb['fossil_pct'],
-            'unit':         'gCO2eq/kWh',
-            'country_code': country_code,
-            'source':       'estimated'
-        })
+    except Exception as e:
+        return jsonify({'intensity':400,'fossil_pct':55.0,'unit':'gCO2eq/kWh','source':'estimated'})
 
 # ── Energy prices route ───────────────────────────────────────────────────────
 @app.route('/api/energy-prices')

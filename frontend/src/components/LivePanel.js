@@ -47,7 +47,7 @@ export default function LivePanel({ country }) {
     Promise.allSettled([
       getWeatherByCountry(country),
       getNews(country),
-      getCO2(code),
+      getCO2(country),
       getEnergyPrices(),
     ]).then(([w, n, c, p]) => {
       if (w.status === 'fulfilled') setWeather(w.value.data);
