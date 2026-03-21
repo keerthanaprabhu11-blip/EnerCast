@@ -8,6 +8,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.13.6",
+    "countries-and-timezones": "^3.8.0",
     "d3-scale": "^4.0.2",
     "lucide-react": "^0.577.0",
     "react": "^19.2.4",

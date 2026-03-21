@@ -656,20 +656,19 @@ def get_co2():
     if cached: return jsonify(cached)
     try:
         cdf = df[df['country'] == country].sort_values('year')
-        fossil = cdf['fossil_share_energy'].dropna()
-        renew  = cdf['renewables_share_energy'].dropna()
-        co2    = cdf['co2'].dropna()
-        energy = cdf['primary_energy_consumption'].dropna()
-        fossil_pct = round(float(fossil.iloc[-1]), 1) if len(fossil) > 0 else 60.0
-        renew_pct  = round(float(renew.iloc[-1]),  1) if len(renew)  > 0 else 20.0
-        co2_mt     = round(float(co2.iloc[-1]),    1) if len(co2)    > 0 else 0
-        energy_twh = float(energy.iloc[-1])              if len(energy) > 0 else 1000
-        intensity  = round((co2_mt * 1e6) / (energy_twh * 277.8), 1) if energy_twh > 0 else 400
+        fossil     = cdf['fossil_share_energy'].dropna()
+        renew      = cdf['renewables_share_energy'].dropna()
+        intensity_s= cdf['carbon_intensity_elec'].dropna()
+        energy     = cdf['primary_energy_consumption'].dropna()
+        fossil_pct = round(float(fossil.iloc[-1]), 1)      if len(fossil)      > 0 else 60.0
+        renew_pct  = round(float(renew.iloc[-1]), 1)       if len(renew)       > 0 else 20.0
+        intensity  = round(float(intensity_s.iloc[-1]), 1) if len(intensity_s) > 0 else 400
+        energy_twh = round(float(energy.iloc[-1]), 1)      if len(energy)      > 0 else 0
         result = {
             'intensity':  min(intensity, 950),
             'fossil_pct': fossil_pct,
             'renew_pct':  renew_pct,
-            'co2_mt':     co2_mt,
+            'energy_twh': energy_twh,
             'unit':       'gCO2eq/kWh',
             'country':    country,
             'source':     'OWID Dataset',

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ct from 'countries-and-timezones';
 import { getWeatherByCountry, getNews, getCO2, getEnergyPrices } from '../services/api';
 
 const COUNTRY_CODES = {
@@ -218,15 +219,45 @@ export default function LivePanel({ country }) {
   );
 }
 
-const TIMEZONES = {
-  'India':'Asia/Kolkata','United States':'America/New_York','China':'Asia/Shanghai',
-  'Germany':'Europe/Berlin','France':'Europe/Paris','Brazil':'America/Sao_Paulo',
-  'Australia':'Australia/Sydney','United Kingdom':'Europe/London','Japan':'Asia/Tokyo',
-  'Canada':'America/Toronto','Russia':'Europe/Moscow','South Korea':'Asia/Seoul',
-  'Italy':'Europe/Rome','Spain':'Europe/Madrid','Mexico':'America/Mexico_City',
-  'Indonesia':'Asia/Jakarta','Saudi Arabia':'Asia/Riyadh','Turkey':'Europe/Istanbul',
-  'Argentina':'America/Argentina/Buenos_Aires','South Africa':'Africa/Johannesburg',
+const COUNTRY_TO_ISO = {
+  'Afghanistan':'AF','Albania':'AL','Algeria':'DZ','Angola':'AO','Argentina':'AR',
+  'Armenia':'AM','Australia':'AU','Austria':'AT','Azerbaijan':'AZ','Bahamas':'BS',
+  'Bahrain':'BH','Bangladesh':'BD','Barbados':'BB','Belarus':'BY','Belgium':'BE',
+  'Belize':'BZ','Benin':'BJ','Bhutan':'BT','Bolivia':'BO','Bosnia and Herzegovina':'BA',
+  'Botswana':'BW','Brazil':'BR','Brunei':'BN','Bulgaria':'BG','Burkina Faso':'BF',
+  'Cambodia':'KH','Cameroon':'CM','Canada':'CA','Chile':'CL','China':'CN',
+  'Colombia':'CO','Congo':'CG','Costa Rica':'CR','Croatia':'HR','Cuba':'CU',
+  'Cyprus':'CY','Czech Republic':'CZ','Denmark':'DK','Dominican Republic':'DO',
+  'Ecuador':'EC','Egypt':'EG','El Salvador':'SV','Estonia':'EE','Ethiopia':'ET',
+  'Finland':'FI','France':'FR','Gabon':'GA','Germany':'DE','Ghana':'GH',
+  'Greece':'GR','Guatemala':'GT','Haiti':'HT','Honduras':'HN','Hungary':'HU',
+  'Iceland':'IS','India':'IN','Indonesia':'ID','Iran':'IR','Iraq':'IQ',
+  'Ireland':'IE','Israel':'IL','Italy':'IT','Jamaica':'JM','Japan':'JP',
+  'Jordan':'JO','Kazakhstan':'KZ','Kenya':'KE','Kuwait':'KW','Laos':'LA',
+  'Latvia':'LV','Lebanon':'LB','Libya':'LY','Lithuania':'LT','Luxembourg':'LU',
+  'Malaysia':'MY','Mali':'ML','Mexico':'MX','Moldova':'MD','Mongolia':'MN',
+  'Morocco':'MA','Mozambique':'MZ','Myanmar':'MM','Nepal':'NP','Netherlands':'NL',
+  'New Zealand':'NZ','Nicaragua':'NI','Nigeria':'NG','North Korea':'KP','Norway':'NO',
+  'Oman':'OM','Pakistan':'PK','Panama':'PA','Paraguay':'PY','Peru':'PE',
+  'Philippines':'PH','Poland':'PL','Portugal':'PT','Qatar':'QA','Romania':'RO',
+  'Russia':'RU','Rwanda':'RW','Saudi Arabia':'SA','Senegal':'SN','Serbia':'RS',
+  'Singapore':'SG','Slovakia':'SK','Slovenia':'SI','Somalia':'SO','South Africa':'ZA',
+  'South Korea':'KR','Spain':'ES','Sri Lanka':'LK','Sudan':'SD','Sweden':'SE',
+  'Switzerland':'CH','Syria':'SY','Taiwan':'TW','Tanzania':'TZ','Thailand':'TH',
+  'Tunisia':'TN','Turkey':'TR','Uganda':'UG','Ukraine':'UA','United Arab Emirates':'AE',
+  'United Kingdom':'GB','United States':'US','Uruguay':'UY','Uzbekistan':'UZ',
+  'Venezuela':'VE','Vietnam':'VN','Yemen':'YE','Zambia':'ZM','Zimbabwe':'ZW',
 };
+
+function getTimezone(country) {
+  const iso = COUNTRY_TO_ISO[country];
+  if (!iso) return 'UTC';
+  try {
+    const c = ct.getCountry(iso);
+    if (c && c.timezones && c.timezones.length > 0) return c.timezones[0];
+  } catch(e) {}
+  return 'UTC';
+}
 
 function LiveClock({ country }) {
   const [time, setTime] = useState(new Date());
@@ -234,7 +265,7 @@ function LiveClock({ country }) {
     const t = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
-  const tz = TIMEZONES[country] || 'UTC';
+  const tz = getTimezone(country);
   return (
     <div>
       <div style={{ fontSize:26,fontWeight:700,color:'#f0f4f8',fontVariantNumeric:'tabular-nums' }}>
