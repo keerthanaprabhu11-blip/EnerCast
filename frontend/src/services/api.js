@@ -47,7 +47,7 @@ export const changePassword       = (data)               => API.post('/auth/chan
 
 export const getWeatherByCountry  = (country)            => API.get(`/weather?country=${country}`);
 export const getNews              = (country)            => API.get(`/news?country=${country}`);
-export const getCO2               = (code)               => API.get(`/co2?country=${country}`);
+export const getCO2               = (country)            => API.get(`/co2?country=${country}`);
 export const getEnergyPrices      = ()                   => API.get('/energy-prices');
 
 export default API;
