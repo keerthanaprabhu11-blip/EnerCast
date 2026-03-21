@@ -682,31 +682,34 @@ def get_co2():
 # ── Energy prices route ───────────────────────────────────────────────────────
 @app.route('/api/energy-prices')
 def get_energy_prices():
-    cached = cache_get('energy_prices')
+    country = request.args.get('country', 'United States')
+    cached  = cache_get(f'energy_prices_{country}')
     if cached: return jsonify(cached)
     try:
-        url  = f"https://api.eia.gov/v2/electricity/retail-sales/data/?api_key={EIA_KEY}&frequency=monthly&data[0]=price&sort[0][column]=period&sort[0][direction]=desc&length=1"
-        data = req.get(url, timeout=5).json()
-        if 'error' in data:
-            raise Exception(data['error'])
-        rows  = data.get('response', {}).get('data', [])
-        price = rows[0].get('price') if rows else None
+        cdf = df[df['country'] == country].sort_values('year')
+        energy  = cdf['primary_energy_consumption'].dropna()
+        gdp     = cdf['gdp'].dropna()
+        co2     = cdf['co2'].dropna()
+        latest_year = int(cdf['year'].iloc[-1])
+        energy_val  = round(float(energy.iloc[-1]), 1) if len(energy) > 0 else 0
+        gdp_val     = round(float(gdp.iloc[-1]) / 1e9, 1) if len(gdp) > 0 else 0
+        co2_val     = round(float(co2.iloc[-1]), 1) if len(co2) > 0 else 0
+        # Energy intensity = energy per GDP (TWh per billion USD)
+        intensity = round(energy_val / gdp_val, 3) if gdp_val > 0 else 0
         result = {
-            'price':  price,
-            'unit':   'cents/kWh',
-            'period': rows[0].get('period') if rows else 'N/A',
-            'source': 'EIA',
+            'energy_twh':  energy_val,
+            'gdp_billion': gdp_val,
+            'co2_mt':      co2_val,
+            'intensity':   intensity,
+            'year':        latest_year,
+            'unit':        'TWh/Billion USD',
+            'source':      'OWID Dataset',
+            'country':     country,
         }
-        cache_set('energy_prices', result)
+        cache_set(f'energy_prices_{country}', result)
         return jsonify(result)
-    except Exception:
-        return jsonify({
-            'price':  16.24,
-            'unit':   'cents/kWh',
-            'period': '2025-12',
-            'source': 'estimated',
-            'note':   'EIA key pending activation'
-        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/map-data', methods=['GET'])
