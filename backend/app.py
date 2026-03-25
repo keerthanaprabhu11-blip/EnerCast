@@ -424,7 +424,7 @@ def forecast_lstm():
     fc_years_n = int(request.args.get('years', 7))
     try:
         series = prepare_series(country, metric)
-        if len(series) < 15: return jsonify({'error': 'Not enough data'}), 400
+        if len(series) < 5: return jsonify({'error': 'Not enough data'}), 400
         vals        = np.array(series[metric].values, dtype=float)
         yrs         = np.array(series['year'].values)
         scaler      = MinMaxScaler()
@@ -740,7 +740,7 @@ def forecast_ensemble():
     if cached: return jsonify(cached)
     try:
         series = prepare_series(country, metric)
-        if len(series) < 15: return jsonify({'error': 'Not enough data'}), 400
+        if len(series) < 5: return jsonify({'error': 'Not enough data'}), 400
         vals  = series[metric].values
         years = series['year'].values
         split = int(len(vals) * 0.8)
